@@ -1,19 +1,43 @@
 /**
  * UserPanel — Route finder form and results display.
+ * Supports both live server mode and demo (client-side) mode.
  */
 const UserPanel = {
   zones: [],
   ws: null,
+  demoSim: null,
+  latestZones: [],
 
-  /** Initialize with zone list */
+  /** Initialize with live server */
   init(ws) {
     this.ws = ws;
     this._loadZones();
-
-    Utils.$('findRouteBtn').addEventListener('click', () => this.findRoute());
+    this._bindEvents();
   },
 
-  /** Load zones into dropdowns */
+  /** Initialize in demo mode (no server) */
+  initDemo(simulator) {
+    this.demoSim = simulator;
+    this.zones = simulator.ZONES;
+    this._populateDropdowns();
+    this._bindEvents();
+  },
+
+  /** Bind click event (only once) */
+  _bindEvents() {
+    const btn = Utils.$('findRouteBtn');
+    if (btn && !btn._bound) {
+      btn.addEventListener('click', () => this.findRoute());
+      btn._bound = true;
+    }
+  },
+
+  /** Store latest zone data for demo routing */
+  updateZones(zones) {
+    this.latestZones = zones;
+  },
+
+  /** Load zones into dropdowns from API */
   async _loadZones() {
     try {
       const res = await fetch('/api/zones');
@@ -21,7 +45,13 @@ const UserPanel = {
       this.zones = data.zones;
       this._populateDropdowns();
     } catch (err) {
-      console.error('Failed to load zones:', err);
+      console.warn('Failed to load zones from API, using demo data:', err.message);
+      // Fallback: if DemoSimulator is available, use its zones
+      if (window.DemoSimulator) {
+        this.demoSim = window.DemoSimulator;
+        this.zones = DemoSimulator.ZONES;
+        this._populateDropdowns();
+      }
     }
   },
 
@@ -52,6 +82,20 @@ const UserPanel = {
       return;
     }
 
+    // Demo mode: compute client-side
+    if (this.demoSim) {
+      const zones = this.demoSim.generateCrowdData().zones;
+      const route = this.demoSim.computeRoute(from, to, zones);
+      if (route) {
+        this._showRoute(route);
+        StadiumMap.setRoute(route.path);
+      } else {
+        this._showNoRoute();
+      }
+      return;
+    }
+
+    // Live server mode
     try {
       const res = await fetch('/api/route', {
         method: 'POST',
@@ -68,6 +112,17 @@ const UserPanel = {
       }
     } catch (err) {
       console.error('Route request failed:', err);
+      // Fallback to demo routing
+      if (window.DemoSimulator) {
+        const zones = DemoSimulator.generateCrowdData().zones;
+        const route = DemoSimulator.computeRoute(from, to, zones);
+        if (route) {
+          this._showRoute(route);
+          StadiumMap.setRoute(route.path);
+        } else {
+          this._showNoRoute();
+        }
+      }
     }
   },
 

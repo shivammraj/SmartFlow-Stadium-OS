@@ -1,18 +1,20 @@
 /**
  * App — Main application entry point.
  * Manages WebSocket connection and dispatches state updates to UI modules.
+ * Falls back to DemoSimulator when no backend is available (e.g. GitHub Pages).
  */
 (function () {
   let ws = null;
   let reconnectTimer = null;
   let reconnectAttempts = 0;
   const MAX_RECONNECT_DELAY = 10000;
+  const MAX_RECONNECT_TRIES = 3;
+  let usingDemoMode = false;
 
   /** Initialize the application */
   function init() {
     StadiumMap.init();
     connectWebSocket();
-    UserPanel.init(ws);
   }
 
   /** Connect to WebSocket server */
@@ -20,12 +22,20 @@
     const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
     const url = `${protocol}://${location.host}`;
 
-    ws = new WebSocket(url);
+    try {
+      ws = new WebSocket(url);
+    } catch (e) {
+      console.warn('[WS] WebSocket creation failed, starting demo mode');
+      startDemoMode();
+      return;
+    }
 
     ws.addEventListener('open', () => {
       reconnectAttempts = 0;
-      setConnectionStatus(true);
-      console.log('[WS] Connected');
+      usingDemoMode = false;
+      setConnectionStatus(true, false);
+      console.log('[WS] Connected to live server');
+      UserPanel.init(ws);
     });
 
     ws.addEventListener('message', (event) => {
@@ -38,13 +48,12 @@
     });
 
     ws.addEventListener('close', () => {
-      setConnectionStatus(false);
-      console.log('[WS] Disconnected — reconnecting...');
+      setConnectionStatus(false, usingDemoMode);
+      console.log('[WS] Disconnected');
       scheduleReconnect();
     });
 
-    ws.addEventListener('error', (err) => {
-      console.error('[WS] Error:', err);
+    ws.addEventListener('error', () => {
       ws.close();
     });
   }
@@ -54,9 +63,22 @@
     if (msg.type === 'state-update' && msg.data) {
       updateUI(msg.data);
     }
-    if (msg.type === 'route-response' && msg.data) {
-      // handled by UserPanel if needed
-    }
+  }
+
+  /** Start client-side demo simulation */
+  function startDemoMode() {
+    if (usingDemoMode) return;
+    usingDemoMode = true;
+    setConnectionStatus(true, true);
+    console.log('[Demo] Starting client-side simulation...');
+
+    // Init UserPanel in demo mode
+    UserPanel.initDemo(DemoSimulator);
+
+    // Start simulator
+    DemoSimulator.start((state) => {
+      updateUI(state);
+    });
   }
 
   /** Dispatch state to all UI modules */
@@ -126,20 +148,33 @@
   }
 
   /** Update connection status indicator */
-  function setConnectionStatus(connected) {
+  function setConnectionStatus(connected, isDemo) {
     const dot = document.querySelector('.conn-dot');
     const label = document.querySelector('.conn-label');
     if (dot) {
-      dot.className = `conn-dot ${connected ? 'connected' : 'disconnected'}`;
+      if (connected && isDemo) {
+        dot.className = 'conn-dot demo';
+      } else {
+        dot.className = `conn-dot ${connected ? 'connected' : 'disconnected'}`;
+      }
     }
     if (label) {
-      label.textContent = connected ? 'Live' : 'Offline';
+      if (connected && isDemo) {
+        label.textContent = 'Demo';
+      } else {
+        label.textContent = connected ? 'Live' : 'Offline';
+      }
     }
   }
 
   /** Reconnect with exponential backoff */
   function scheduleReconnect() {
     clearTimeout(reconnectTimer);
+    if (reconnectAttempts >= MAX_RECONNECT_TRIES) {
+      console.log(`[WS] Max reconnect attempts (${MAX_RECONNECT_TRIES}) reached. Switching to demo mode.`);
+      startDemoMode();
+      return;
+    }
     const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY);
     reconnectAttempts++;
     reconnectTimer = setTimeout(connectWebSocket, delay);
