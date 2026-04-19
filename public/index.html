@@ -3,65 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="SmartFlow Stadium OS — Multi-Agent AI-powered stadium management dashboard with real-time crowd monitoring, route optimization, and queue management.">
-  <title>SmartFlow Stadium OS — Dashboard</title>
+  <meta name="description" content="SmartFlow Stadium OS — Multi-Agent AI-powered stadium management dashboard.">
+  <title>SmartFlow Stadium OS — AI Decision Engine Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles-additions.css">
 </head>
 <body>
   <!-- Top Header Bar -->
   <header id="header" class="header">
     <div class="header-left">
       <div class="logo">
-        <span class="logo-icon">🏟️</span>
+        <span class="logo-icon" aria-hidden="true" alt="Stadium Logo">🏟️</span>
         <span class="logo-text">SmartFlow <span class="accent">Stadium OS</span></span>
       </div>
     </div>
+    
     <div class="header-center">
       <div class="phase-indicator" id="phaseIndicator">
         <span class="phase-dot"></span>
-        <span class="phase-label" id="phaseLabel">Initializing...</span>
+        <span class="phase-label" id="phaseLabel">Idle</span>
         <div class="phase-progress-bar">
           <div class="phase-progress-fill" id="phaseProgressFill"></div>
         </div>
       </div>
     </div>
+    
     <div class="header-right">
-      <div class="stat-chip" id="statPeople">
+      <div class="stat-chip" id="statPeople" aria-label="Total People">
         <span class="stat-icon">👥</span>
         <span class="stat-value" id="totalPeople">0</span>
         <span class="stat-label">People</span>
       </div>
-      <div class="stat-chip" id="statAlerts">
-        <span class="stat-icon">🔔</span>
-        <span class="stat-value" id="totalAlerts">0</span>
-        <span class="stat-label">Alerts</span>
-      </div>
-      <div class="stat-chip" id="statHealth">
+      <div class="stat-chip" id="statHealth" aria-label="AI Health">
         <span class="stat-icon">💚</span>
-        <span class="stat-value" id="systemHealth">--</span>
-        <span class="stat-label">AI Health</span>
+        <span class="stat-value" id="systemHealth">Idle</span>
+        <span class="stat-label">AI Status</span>
       </div>
-      <div class="connection-status" id="connectionStatus">
-        <span class="conn-dot disconnected"></span>
-        <span class="conn-label">Offline</span>
-      </div>
+      <button id="startSimulationBtn" class="btn-primary start-btn" aria-label="Start Live Simulation">
+        ▶ Start Live Simulation
+      </button>
     </div>
   </header>
 
   <!-- Main Content -->
   <main id="mainContent" class="main-content">
     <!-- Left Column: Stadium Map -->
-    <section class="panel map-panel" id="mapPanel">
+    <section class="panel map-panel" id="mapPanel" aria-label="Live Stadium Map">
       <div class="panel-header">
-        <h2 class="panel-title">🗺️ Stadium Live Map</h2>
+        <h2 class="panel-title">🗺️ Live Stadium Map</h2>
         <div class="panel-controls">
-          <button class="btn-icon" id="togglePredictions" title="Toggle predictions overlay">
+          <button class="btn-icon" id="togglePredictions" aria-label="Toggle predictions overlay" title="Toggle AI Predictions">
             <span>🔮</span>
           </button>
-          <span class="pipeline-counter" id="pipelineCounter">Run #0</span>
+          <span class="pipeline-counter" id="pipelineCounter" aria-live="polite">System offline</span>
         </div>
       </div>
       <div class="map-container" id="stadiumMapContainer">
@@ -76,71 +73,66 @@
 
     <!-- Right Column: Panels -->
     <aside class="side-panels">
-      <!-- User Route Panel -->
-      <section class="panel user-panel" id="userPanel">
+      
+      <!-- AI Decision Engine Panel -->
+      <section class="panel ai-panel" id="aiDecisionPanel" aria-label="AI Decision Engine">
         <div class="panel-header">
-          <h2 class="panel-title">🧭 Route Finder</h2>
+          <h2 class="panel-title ai-glow">🧠 AI Decision Engine</h2>
+          <span class="badge ai-badge" id="aiDecisionsBadge">Active</span>
+        </div>
+        <div class="admin-actions" id="aiDecisionsList">
+          <div class="idle-state">System idle. Start simulation to see AI actions.</div>
+        </div>
+      </section>
+
+      <!-- User Route Panel -->
+      <section class="panel user-panel" id="userPanel" aria-label="Smart Routing System">
+        <div class="panel-header">
+          <h2 class="panel-title">🧭 Smart Routing System</h2>
         </div>
         <div class="route-form">
           <div class="form-group">
             <label for="routeFrom">From</label>
-            <select id="routeFrom" class="select-input">
+            <select id="routeFrom" class="select-input" aria-label="Route Starting Zone">
               <option value="">Select zone...</option>
             </select>
           </div>
           <div class="form-group">
             <label for="routeTo">To</label>
-            <select id="routeTo" class="select-input">
+            <select id="routeTo" class="select-input" aria-label="Route Destination Zone">
               <option value="">Select zone...</option>
             </select>
           </div>
-          <button class="btn-primary" id="findRouteBtn">Find Best Route</button>
+          <button class="btn-primary route-btn" id="findRouteBtn">📍 Calculate Best Route</button>
         </div>
-        <div class="route-result" id="routeResult" style="display:none;">
+        <div class="route-result" id="routeResult" style="display:none;" aria-live="polite">
           <div class="route-stats" id="routeStats"></div>
+          <div class="route-badge-container">
+             <span class="badge route-badge">🔥 Fastest/Safest Route</span>
+             <span id="routeReason" class="route-reason">Avoiding high-density zones</span>
+          </div>
           <div class="route-path" id="routePath"></div>
         </div>
       </section>
 
       <!-- Queue Wait Times -->
-      <section class="panel queue-panel" id="queuePanel">
+      <section class="panel queue-panel" id="queuePanel" aria-label="Queue Optimization Status">
         <div class="panel-header">
-          <h2 class="panel-title">⏱️ Queue Status</h2>
+          <h2 class="panel-title">⏱️ Queue Optimization</h2>
         </div>
         <div class="queue-list" id="queueList">
           <!-- Filled by JS -->
+          <div class="idle-state">System idle.</div>
         </div>
       </section>
 
-      <!-- Admin Dashboard -->
-      <section class="panel admin-panel" id="adminPanel">
-        <div class="panel-header">
-          <h2 class="panel-title">🛡️ Operations Center</h2>
-          <span class="badge" id="actionsBadge">0</span>
-        </div>
-        <div class="admin-actions" id="adminActions">
-          <!-- Filled by JS -->
-        </div>
-      </section>
-
-      <!-- Notifications Panel -->
-      <section class="panel notifications-panel" id="notificationsPanel">
-        <div class="panel-header">
-          <h2 class="panel-title">📢 Live Alerts</h2>
-          <span class="badge critical" id="alertsBadge">0</span>
-        </div>
-        <div class="notifications-list" id="notificationsList">
-          <!-- Filled by JS -->
-        </div>
-      </section>
     </aside>
   </main>
 
-  <script src="js/utils.js"></script>
-  <script src="js/demoSimulator.js"></script>
-  <script src="js/stadiumMap.js"></script>
-  <script src="js/userPanel.js"></script>
-  <script src="js/adminDashboard.js"></script>
-  <script src="js/app.js"></script>
+  <!-- Firebase Script Import -->
+  <script type="module" src="js/firebaseConfig.js"></script>
+  
+  <!-- Main Application Moduler System -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>

@@ -80,5 +80,4 @@ const Utils = {
   }
 };
 
-// Make globally available
-window.Utils = Utils;
+export default Utils;

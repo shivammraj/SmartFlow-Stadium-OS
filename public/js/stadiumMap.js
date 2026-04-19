@@ -1,6 +1,8 @@
 /**
  * StadiumMap — Renders the 4x4 zone grid heatmap with live updates.
  */
+import Utils from './utils.js';
+
 const StadiumMap = {
   zones: [],
   predictions: [],
@@ -194,4 +196,4 @@ const StadiumMap = {
   }
 };
 
-window.StadiumMap = StadiumMap;
+export default StadiumMap;
