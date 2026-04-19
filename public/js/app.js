@@ -106,9 +106,10 @@ function updateUI(state) {
   // Give latest zones to UserPanel
   UserPanel.updateZones(state.monitoring.zones);
 
-  // Queues & AI Decisions
+  // Queues, AI Decisions, and Alerts
   AdminDashboard.updateQueues(state.queues);
   AdminDashboard.updateOperations(state.decisions);
+  AdminDashboard.updateNotifications(state.decisions);
 }
 
 function updateSystemHealth(text, color) {

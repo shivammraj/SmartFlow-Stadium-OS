@@ -211,6 +211,16 @@ h1, h2, h3, .logo-text, .panel-title, .route-stat-value, .queue-wait-time {
 }
 .app-window .side-panels {
   max-height: 800px;
+  overflow-y: auto;
+  padding-right: 8px; /* Room for scrollbar */
+}
+/* custom scrollbar for panels */
+.app-window .side-panels::-webkit-scrollbar {
+  width: 6px;
+}
+.app-window .side-panels::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 
 /* === DASHBOARD MICRO-POLISH === */
@@ -261,6 +271,19 @@ h1, h2, h3, .logo-text, .panel-title, .route-stat-value, .queue-wait-time {
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.15);
   background: linear-gradient(90deg, rgba(34, 197, 94, 0.05), transparent);
 }
+
+.notification-item {
+  padding: 12px;
+  border-left: 4px solid var(--accent);
+  background: rgba(255, 255, 255, 0.03);
+  margin-bottom: 10px;
+  border-radius: 4px;
+}
+.notification-item.critical { border-left-color: var(--red); background: rgba(239, 68, 68, 0.1); }
+.notification-item.warning { border-left-color: var(--yellow); background: rgba(234, 179, 8, 0.1); }
+.notification-header { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 5px; }
+.notification-time { color: var(--text-muted); }
+.notification-body { font-size: 0.9rem; color: var(--text-secondary); }
 
 
 /* ============================================

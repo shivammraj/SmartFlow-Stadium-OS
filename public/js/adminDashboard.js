@@ -63,5 +63,40 @@ export const AdminDashboard = {
         <div class="action-impact">⚡ ${action.impact}</div>
       </div>
     `).join('');
+  },
+
+  updateNotifications(opsData) {
+    if (!opsData || !opsData.actions) return;
+    const container = Utils.$('notificationsList');
+    const badge = Utils.$('alertsBadge');
+    if (!container) return;
+
+    const alerts = opsData.actions.filter(a => a.priority === 'critical' || a.priority === 'warning');
+    
+    if (badge) {
+      if (alerts.length > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = alerts.length;
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+
+    if (alerts.length === 0) {
+      container.innerHTML = '<div class="idle-state">System idle. Alerts will appear here.</div>';
+      return;
+    }
+
+    const timeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    container.innerHTML = alerts.map(alert => `
+      <div class="notification-item ${alert.priority}">
+        <div class="notification-header">
+          <strong>${alert.priority === 'critical' ? '🔴 CRITICAL' : '⚠️ WARNING'}</strong>
+          <span class="notification-time">${timeString}</span>
+        </div>
+        <div class="notification-body">${alert.reason}</div>
+      </div>
+    `).join('');
   }
 };

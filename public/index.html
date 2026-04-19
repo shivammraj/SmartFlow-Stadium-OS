@@ -61,35 +61,6 @@
   </section>
 
   <!-- =============================== -->
-  <!-- ARCHITECTURE                      -->
-  <!-- =============================== -->
-  <section id="architecture" class="arch-section">
-    <h2 class="section-title">System Architecture & Tech Stack</h2>
-    <div class="arch-container">
-      <div class="arch-diagram">
-        <div class="arch-layer">
-          <span class="layer-title">Sensors & Cameras</span>
-          <div class="layer-desc">Captures live movement density</div>
-        </div>
-        <div class="arch-link">↓ Real-time Telemetry ↓</div>
-        <div class="arch-layer core-layer">
-          <span class="layer-title ai-glow">Multi-Agent AI Engine (SmartFlow)</span>
-          <div class="agent-grid">
-            <span class="agent-box">🔮 Prediction Agent</span>
-            <span class="agent-box">🧭 Routing Agent</span>
-            <span class="agent-box">⚙️ Queue Opt. Agent</span>
-          </div>
-        </div>
-        <div class="arch-link">↓ Autonomous Output ↓</div>
-        <div class="arch-layer end-layer">
-          <div class="layer-title">Operations Console & Fan App</div>
-          <div class="layer-desc">Auto-Deploy Staff & Reroute Users</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =============================== -->
   <!-- LIVE SCENARIO SIMULATION          -->
   <!-- =============================== -->
   <section id="live-demo" class="demo-section">
@@ -98,7 +69,6 @@
       <p class="demo-subtitle">Watch the Multi-Agent System detect bottlenecks and resolve them live.</p>
     </div>
 
-    <!-- The original App Header is now docked to the container -->
     <div class="app-window">
       <!-- Top Header Bar -->
       <header id="header" class="header app-header">
@@ -214,9 +184,49 @@
             </div>
           </section>
 
+          <!-- Notifications Panel (Re-added by request) -->
+          <section class="panel notifications-panel" id="notificationsPanel" aria-label="Live Alerts">
+            <div class="panel-header">
+              <h2 class="panel-title">📢 Live Alerts</h2>
+              <span class="badge critical" id="alertsBadge" style="display:none;">0</span>
+            </div>
+            <div class="notifications-list" id="notificationsList">
+              <div class="idle-state">System idle. Alerts will appear here.</div>
+            </div>
+          </section>
+
         </aside>
       </main>
     </div> <!-- /app-window -->
+  </section>
+
+  <!-- =============================== -->
+  <!-- ARCHITECTURE                      -->
+  <!-- =============================== -->
+  <section id="architecture" class="arch-section">
+    <h2 class="section-title">System Architecture & Tech Stack</h2>
+    <div class="arch-container">
+      <div class="arch-diagram">
+        <div class="arch-layer">
+          <span class="layer-title">Sensors & Cameras</span>
+          <div class="layer-desc">Captures live movement density</div>
+        </div>
+        <div class="arch-link">↓ Real-time Telemetry ↓</div>
+        <div class="arch-layer core-layer">
+          <span class="layer-title ai-glow">Multi-Agent AI Engine (SmartFlow)</span>
+          <div class="agent-grid">
+            <span class="agent-box">🔮 Prediction Agent</span>
+            <span class="agent-box">🧭 Routing Agent</span>
+            <span class="agent-box">⚙️ Queue Opt. Agent</span>
+          </div>
+        </div>
+        <div class="arch-link">↓ Autonomous Output ↓</div>
+        <div class="arch-layer end-layer">
+          <div class="layer-title">Operations Console & Fan App</div>
+          <div class="layer-desc">Auto-Deploy Staff & Reroute Users</div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- Firebase Script Import -->
