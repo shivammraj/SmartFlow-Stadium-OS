@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SmartFlow Stadium OS — Multi-Agent AI-powered stadium management dashboard with real-time crowd monitoring, route optimization, and queue management.">
+  <title>SmartFlow Stadium OS — Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Top Header Bar -->
+  <header id="header" class="header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">🏟️</span>
+        <span class="logo-text">SmartFlow <span class="accent">Stadium OS</span></span>
+      </div>
+    </div>
+    <div class="header-center">
+      <div class="phase-indicator" id="phaseIndicator">
+        <span class="phase-dot"></span>
+        <span class="phase-label" id="phaseLabel">Initializing...</span>
+        <div class="phase-progress-bar">
+          <div class="phase-progress-fill" id="phaseProgressFill"></div>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="stat-chip" id="statPeople">
+        <span class="stat-icon">👥</span>
+        <span class="stat-value" id="totalPeople">0</span>
+        <span class="stat-label">People</span>
+      </div>
+      <div class="stat-chip" id="statAlerts">
+        <span class="stat-icon">🔔</span>
+        <span class="stat-value" id="totalAlerts">0</span>
+        <span class="stat-label">Alerts</span>
+      </div>
+      <div class="stat-chip" id="statHealth">
+        <span class="stat-icon">💚</span>
+        <span class="stat-value" id="systemHealth">--</span>
+        <span class="stat-label">AI Health</span>
+      </div>
+      <div class="connection-status" id="connectionStatus">
+        <span class="conn-dot disconnected"></span>
+        <span class="conn-label">Offline</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="mainContent" class="main-content">
+    <!-- Left Column: Stadium Map -->
+    <section class="panel map-panel" id="mapPanel">
+      <div class="panel-header">
+        <h2 class="panel-title">🗺️ Stadium Live Map</h2>
+        <div class="panel-controls">
+          <button class="btn-icon" id="togglePredictions" title="Toggle predictions overlay">
+            <span>🔮</span>
+          </button>
+          <span class="pipeline-counter" id="pipelineCounter">Run #0</span>
+        </div>
+      </div>
+      <div class="map-container" id="stadiumMapContainer">
+        <!-- Dynamically rendered by stadiumMap.js -->
+      </div>
+      <div class="map-legend">
+        <span class="legend-item"><span class="legend-dot green"></span> Low (&lt;50%)</span>
+        <span class="legend-item"><span class="legend-dot yellow"></span> Moderate (50-75%)</span>
+        <span class="legend-item"><span class="legend-dot red"></span> High (&gt;75%)</span>
+      </div>
+    </section>
+
+    <!-- Right Column: Panels -->
+    <aside class="side-panels">
+      <!-- User Route Panel -->
+      <section class="panel user-panel" id="userPanel">
+        <div class="panel-header">
+          <h2 class="panel-title">🧭 Route Finder</h2>
+        </div>
+        <div class="route-form">
+          <div class="form-group">
+            <label for="routeFrom">From</label>
+            <select id="routeFrom" class="select-input">
+              <option value="">Select zone...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="routeTo">To</label>
+            <select id="routeTo" class="select-input">
+              <option value="">Select zone...</option>
+            </select>
+          </div>
+          <button class="btn-primary" id="findRouteBtn">Find Best Route</button>
+        </div>
+        <div class="route-result" id="routeResult" style="display:none;">
+          <div class="route-stats" id="routeStats"></div>
+          <div class="route-path" id="routePath"></div>
+        </div>
+      </section>
+
+      <!-- Queue Wait Times -->
+      <section class="panel queue-panel" id="queuePanel">
+        <div class="panel-header">
+          <h2 class="panel-title">⏱️ Queue Status</h2>
+        </div>
+        <div class="queue-list" id="queueList">
+          <!-- Filled by JS -->
+        </div>
+      </section>
+
+      <!-- Admin Dashboard -->
+      <section class="panel admin-panel" id="adminPanel">
+        <div class="panel-header">
+          <h2 class="panel-title">🛡️ Operations Center</h2>
+          <span class="badge" id="actionsBadge">0</span>
+        </div>
+        <div class="admin-actions" id="adminActions">
+          <!-- Filled by JS -->
+        </div>
+      </section>
+
+      <!-- Notifications Panel -->
+      <section class="panel notifications-panel" id="notificationsPanel">
+        <div class="panel-header">
+          <h2 class="panel-title">📢 Live Alerts</h2>
+          <span class="badge critical" id="alertsBadge">0</span>
+        </div>
+        <div class="notifications-list" id="notificationsList">
+          <!-- Filled by JS -->
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <script src="js/utils.js"></script>
+  <script src="js/stadiumMap.js"></script>
+  <script src="js/userPanel.js"></script>
+  <script src="js/adminDashboard.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
