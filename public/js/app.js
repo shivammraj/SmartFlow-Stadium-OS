@@ -1,189 +1,126 @@
 /**
- * App — Main application entry point.
- * Manages WebSocket connection and dispatches state updates to UI modules.
- * Falls back to DemoSimulator when no backend is available (e.g. GitHub Pages).
+ * App — Main application orchestrator for SmartFlow Simulator
  */
-(function () {
-  let ws = null;
-  let reconnectTimer = null;
-  let reconnectAttempts = 0;
-  const MAX_RECONNECT_DELAY = 10000;
-  const MAX_RECONNECT_TRIES = 3;
-  let usingDemoMode = false;
+import Utils from './utils.js';
+import StadiumMap from './stadiumMap.js';
+import { UserPanel } from './userPanel.js';
+import { AdminDashboard } from './adminDashboard.js';
+import { DataGenerator } from '../simulation/DataGenerator.js';
+import { DecisionEngine } from '../agents/DecisionEngine.js';
+import { FirebaseManager } from './firebaseConfig.js';
 
-  /** Initialize the application */
-  function init() {
-    StadiumMap.init();
-    connectWebSocket();
-  }
+let simulationInterval = null;
+let isRunning = false;
 
-  /** Connect to WebSocket server */
-  function connectWebSocket() {
-    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-    const url = `${protocol}://${location.host}`;
+function init() {
+  UserPanel.init();
+  StadiumMap.init();
+  DecisionEngine.init();
 
-    try {
-      ws = new WebSocket(url);
-    } catch (e) {
-      console.warn('[WS] WebSocket creation failed, starting demo mode');
-      startDemoMode();
-      return;
-    }
-
-    ws.addEventListener('open', () => {
-      reconnectAttempts = 0;
-      usingDemoMode = false;
-      setConnectionStatus(true, false);
-      console.log('[WS] Connected to live server');
-      UserPanel.init(ws);
-    });
-
-    ws.addEventListener('message', (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        handleMessage(msg);
-      } catch (err) {
-        console.error('[WS] Parse error:', err);
-      }
-    });
-
-    ws.addEventListener('close', () => {
-      setConnectionStatus(false, usingDemoMode);
-      console.log('[WS] Disconnected');
-      scheduleReconnect();
-    });
-
-    ws.addEventListener('error', () => {
-      ws.close();
+  const startBtn = Utils.$('startSimulationBtn');
+  if (startBtn) {
+    startBtn.addEventListener('click', () => {
+      // scroll to dashboard
+      document.querySelector('.app-window').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      toggleSimulation(startBtn);
     });
   }
 
-  /** Handle incoming WebSocket messages */
-  function handleMessage(msg) {
-    if (msg.type === 'state-update' && msg.data) {
-      updateUI(msg.data);
-    }
-  }
+  // Pre-render empty map so it doesn't look broken
+  DataGenerator.init();
+  const initialZones = DataGenerator.ZONES.map(z => ({
+    ...z, currentCount: 0, density: 0, status: 'green', trend: 'stable'
+  }));
+  StadiumMap.update({ monitoring: { zones: initialZones } });
+}
 
-  /** Start client-side demo simulation */
-  function startDemoMode() {
-    if (usingDemoMode) return;
-    usingDemoMode = true;
-    setConnectionStatus(true, true);
-    console.log('[Demo] Starting client-side simulation...');
-
-    // Init UserPanel in demo mode
-    UserPanel.initDemo(DemoSimulator);
-
-    // Start simulator
-    DemoSimulator.start((state) => {
-      updateUI(state);
-    });
-  }
-
-  /** Dispatch state to all UI modules */
-  function updateUI(state) {
-    // Header stats
-    if (state.monitoring && state.monitoring.summary) {
-      const s = state.monitoring.summary;
-      Utils.$('totalPeople').textContent = s.totalPeople.toLocaleString();
-      Utils.$('totalAlerts').textContent = state.notifications ? state.notifications.counts.total : 0;
-
-      // Phase indicator
-      Utils.$('phaseLabel').textContent = Utils.formatPhase(s.phase);
-      Utils.$('phaseProgressFill').style.width = `${Math.round(s.phaseProgress * 100)}%`;
-
-      // Phase dot color
-      const phaseDot = document.querySelector('.phase-dot');
-      if (phaseDot) {
-        if (s.redZones.length > 3) {
-          phaseDot.style.background = 'var(--red)';
-          phaseDot.style.boxShadow = '0 0 8px var(--red-glow)';
-        } else if (s.redZones.length > 0) {
-          phaseDot.style.background = 'var(--yellow)';
-          phaseDot.style.boxShadow = '0 0 8px var(--yellow-glow)';
-        } else {
-          phaseDot.style.background = 'var(--green)';
-          phaseDot.style.boxShadow = '0 0 8px var(--green-glow)';
-        }
-      }
-    }
-
-    // AI health
-    if (state.feedback) {
-      const health = state.feedback.systemHealth;
-      const healthEl = Utils.$('systemHealth');
-      const healthIcon = Utils.$('statHealth')?.querySelector('.stat-icon');
-      if (healthEl) healthEl.textContent = health;
-      if (healthIcon) {
-        if (health === 'excellent') healthIcon.textContent = '💚';
-        else if (health === 'good') healthIcon.textContent = '💛';
-        else if (health === 'needs-tuning') healthIcon.textContent = '🔴';
-        else healthIcon.textContent = '⏳';
-      }
-    }
-
-    // Pipeline counter
-    if (state.pipelineRun) {
-      Utils.$('pipelineCounter').textContent = `Run #${state.pipelineRun} · ${state.pipelineMs}ms`;
-    }
-
-    // Stadium Map
-    StadiumMap.update(state);
-
-    // Queue Panel
-    if (state.queues) {
-      AdminDashboard.updateQueues(state.queues);
-    }
-
-    // Operations Panel
-    if (state.operations) {
-      AdminDashboard.updateOperations(state.operations);
-    }
-
-    // Notifications Panel
-    if (state.notifications) {
-      AdminDashboard.updateNotifications(state.notifications);
-    }
-  }
-
-  /** Update connection status indicator */
-  function setConnectionStatus(connected, isDemo) {
-    const dot = document.querySelector('.conn-dot');
-    const label = document.querySelector('.conn-label');
-    if (dot) {
-      if (connected && isDemo) {
-        dot.className = 'conn-dot demo';
-      } else {
-        dot.className = `conn-dot ${connected ? 'connected' : 'disconnected'}`;
-      }
-    }
-    if (label) {
-      if (connected && isDemo) {
-        label.textContent = 'Demo';
-      } else {
-        label.textContent = connected ? 'Live' : 'Offline';
-      }
-    }
-  }
-
-  /** Reconnect with exponential backoff */
-  function scheduleReconnect() {
-    clearTimeout(reconnectTimer);
-    if (reconnectAttempts >= MAX_RECONNECT_TRIES) {
-      console.log(`[WS] Max reconnect attempts (${MAX_RECONNECT_TRIES}) reached. Switching to demo mode.`);
-      startDemoMode();
-      return;
-    }
-    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), MAX_RECONNECT_DELAY);
-    reconnectAttempts++;
-    reconnectTimer = setTimeout(connectWebSocket, delay);
-  }
-
-  // Boot
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+function toggleSimulation(btn) {
+  if (isRunning) {
+    // Stop
+    clearInterval(simulationInterval);
+    isRunning = false;
+    btn.textContent = '▶ Start Live Simulation';
+    btn.classList.remove('active');
+    
+    // reset UI explicitly if needed, but keeping last state is fine
+    updateSystemHealth('Idle', 'gray');
+    Utils.$('pipelineCounter').textContent = 'System offline';
   } else {
-    init();
+    // Start
+    DataGenerator.init();
+    isRunning = true;
+    btn.textContent = '⏸ Pause Simulation';
+    btn.classList.add('active');
+    
+    // Run immediately then poll
+    runPipeline();
+    simulationInterval = setInterval(runPipeline, 4000); // 4 seconds
   }
-})();
+}
+
+function runPipeline() {
+  // 1. Generate Raw Data
+  const rawData = DataGenerator.generateRawData();
+  
+  // 2. Multi-Agent AI Processing
+  const state = DecisionEngine.process(rawData);
+  
+  // 3. Update UI
+  updateUI(state);
+  
+  // 4. Firebase Sync (Simulated)
+  FirebaseManager.logState(state);
+}
+
+function updateUI(state) {
+  // Header
+  Utils.$('totalPeople').textContent = state.monitoring.summary.totalPeople.toLocaleString();
+  Utils.$('phaseLabel').textContent = Utils.formatPhase(state.monitoring.summary.phase);
+  Utils.$('phaseProgressFill').style.width = `${Math.round(state.monitoring.summary.phaseProgress * 100)}%`;
+  
+  // Phase Dot Color based on Red Zones
+  const phaseDot = document.querySelector('.phase-dot');
+  if (phaseDot) {
+    if (state.monitoring.summary.redZones.length > 3) {
+      phaseDot.style.background = 'var(--red)';
+      phaseDot.style.boxShadow = '0 0 8px var(--red-glow)';
+    } else if (state.monitoring.summary.redZones.length > 0) {
+      phaseDot.style.background = 'var(--yellow)';
+      phaseDot.style.boxShadow = '0 0 8px var(--yellow-glow)';
+    } else {
+      phaseDot.style.background = 'var(--green)';
+      phaseDot.style.boxShadow = '0 0 8px var(--green-glow)';
+    }
+  }
+
+  // System Health
+  const health = state.feedback.systemHealth;
+  updateSystemHealth(health, health === 'excellent' ? 'var(--green)' : 'var(--orange)');
+
+  // Counter
+  Utils.$('pipelineCounter').textContent = `Run #${state.pipelineRun} (${state.pipelineMs}ms)`;
+
+  // Map
+  StadiumMap.update(state);
+  
+  // Give latest zones to UserPanel
+  UserPanel.updateZones(state.monitoring.zones);
+
+  // Queues & AI Decisions
+  AdminDashboard.updateQueues(state.queues);
+  AdminDashboard.updateOperations(state.decisions);
+}
+
+function updateSystemHealth(text, color) {
+  const healthEl = Utils.$('systemHealth');
+  const healthIcon = document.querySelector('#statHealth .stat-icon');
+  if (healthEl) healthEl.textContent = text.toUpperCase();
+  if (healthIcon) healthIcon.style.color = color;
+}
+
+// Boot
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

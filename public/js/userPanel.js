@@ -1,29 +1,21 @@
 /**
- * UserPanel — Route finder form and results display.
- * Supports both live server mode and demo (client-side) mode.
+ * UserPanel — Smart Routing System module.
  */
-const UserPanel = {
+import Utils from './utils.js';
+import StadiumMap from './stadiumMap.js';
+import { DataGenerator } from '../simulation/DataGenerator.js';
+import { DecisionEngine } from '../agents/DecisionEngine.js';
+
+export const UserPanel = {
   zones: [],
-  ws: null,
-  demoSim: null,
   latestZones: [],
 
-  /** Initialize with live server */
-  init(ws) {
-    this.ws = ws;
-    this._loadZones();
-    this._bindEvents();
-  },
-
-  /** Initialize in demo mode (no server) */
-  initDemo(simulator) {
-    this.demoSim = simulator;
-    this.zones = simulator.ZONES;
+  init() {
+    this.zones = DataGenerator.ZONES;
     this._populateDropdowns();
     this._bindEvents();
   },
 
-  /** Bind click event (only once) */
   _bindEvents() {
     const btn = Utils.$('findRouteBtn');
     if (btn && !btn._bound) {
@@ -32,30 +24,10 @@ const UserPanel = {
     }
   },
 
-  /** Store latest zone data for demo routing */
   updateZones(zones) {
     this.latestZones = zones;
   },
 
-  /** Load zones into dropdowns from API */
-  async _loadZones() {
-    try {
-      const res = await fetch('/api/zones');
-      const data = await res.json();
-      this.zones = data.zones;
-      this._populateDropdowns();
-    } catch (err) {
-      console.warn('Failed to load zones from API, using demo data:', err.message);
-      // Fallback: if DemoSimulator is available, use its zones
-      if (window.DemoSimulator) {
-        this.demoSim = window.DemoSimulator;
-        this.zones = DemoSimulator.ZONES;
-        this._populateDropdowns();
-      }
-    }
-  },
-
-  /** Fill the from/to selects */
   _populateDropdowns() {
     const fromSelect = Utils.$('routeFrom');
     const toSelect = Utils.$('routeTo');
@@ -68,8 +40,7 @@ const UserPanel = {
     toSelect.innerHTML = '<option value="">Select destination...</option>' + optionHTML;
   },
 
-  /** Request a route */
-  async findRoute() {
+  findRoute() {
     const from = Utils.$('routeFrom').value;
     const to = Utils.$('routeTo').value;
 
@@ -82,56 +53,20 @@ const UserPanel = {
       return;
     }
 
-    // Demo mode: compute client-side
-    if (this.demoSim) {
-      const zones = this.demoSim.generateCrowdData().zones;
-      const route = this.demoSim.computeRoute(from, to, zones);
-      if (route) {
-        this._showRoute(route);
-        StadiumMap.setRoute(route.path);
-      } else {
-        this._showNoRoute();
-      }
-      return;
-    }
-
-    // Live server mode
-    try {
-      const res = await fetch('/api/route', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from, to })
-      });
-      const data = await res.json();
-
-      if (data.route) {
-        this._showRoute(data.route);
-        StadiumMap.setRoute(data.route.path);
-      } else {
-        this._showNoRoute();
-      }
-    } catch (err) {
-      console.error('Route request failed:', err);
-      // Fallback to demo routing
-      if (window.DemoSimulator) {
-        const zones = DemoSimulator.generateCrowdData().zones;
-        const route = DemoSimulator.computeRoute(from, to, zones);
-        if (route) {
-          this._showRoute(route);
-          StadiumMap.setRoute(route.path);
-        } else {
-          this._showNoRoute();
-        }
-      }
+    // AI routing calculation
+    const route = DecisionEngine.computeRoute(from, to, this.latestZones.length ? this.latestZones : DataGenerator.ZONES);
+    if (route) {
+      this._showRoute(route);
+      StadiumMap.setRoute(route.path);
+    } else {
+      this._showNoRoute();
     }
   },
 
-  /** Display route result */
   _showRoute(route) {
     const resultDiv = Utils.$('routeResult');
     resultDiv.style.display = 'block';
 
-    // Stats
     Utils.setHTML('routeStats', `
       <div class="route-stat-card">
         <div class="route-stat-value">${route.estimatedTimeMin}</div>
@@ -147,7 +82,8 @@ const UserPanel = {
       </div>
     `);
 
-    // Path visualization
+    Utils.$('routeReason').textContent = route.reason;
+
     const pathHTML = route.path.map((zoneId, i) => {
       const zone = this.zones.find(z => z.id === zoneId);
       const label = zone ? zone.label : zoneId;
@@ -167,5 +103,3 @@ const UserPanel = {
     StadiumMap.setRoute([]);
   }
 };
-
-window.UserPanel = UserPanel;
